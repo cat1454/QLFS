@@ -1,9 +1,7 @@
 package service;
 
 import OrderView.InvoiceView;
-import OrderView.LuckyWheel;
 import database.DataBaseConfig;
-import model.CartItem;
 import utils.AuthUtils;
 import utils.OrderUtils;
 
@@ -129,17 +127,15 @@ public class OrderService {
         return subtotal - discountAmount;
     }
     
-   private String createMainOrder(Connection con, String orderId, double originalAmount, double originalAmount1, float discountPercent) throws SQLException {
-    double totalAmount = originalAmount * (1 - discountPercent );
-    System.out.println(discountPercent);
+   private String createMainOrder(Connection con, String orderId, double totalAmount, double originalAmount, float discountPercent) throws SQLException {
     String sql = "INSERT INTO Orders (Order_ID, User_ID, Order_Date, Total_Amount, Original_Amount, Discount_Percent) " +
                  "OUTPUT INSERTED.Order_ID VALUES (?, ?, GETDATE(), ?, ?, ?)";
 
     try (PreparedStatement stmt = con.prepareStatement(sql)) {
         stmt.setString(1, orderId);
         stmt.setInt(2, AuthUtils.getCurrentUserId());
-        stmt.setDouble(3, totalAmount);
-        stmt.setDouble(4, originalAmount);
+        stmt.setDouble(3, totalAmount);          // Thành tiền sau giảm giá
+        stmt.setDouble(4, originalAmount);       // Tổng tiền gốc
         stmt.setFloat(5, discountPercent);
 
         ResultSet rs = stmt.executeQuery();
@@ -147,10 +143,8 @@ public class OrderService {
             return rs.getString("Order_ID");
         }
     }
-
     return null;
 }
-
     private boolean createOrderDetail(Connection con, String orderId, int productId, 
                                     int quantity, double unitPrice, float discountRate) throws SQLException {
         String sql = "INSERT INTO OrderDetails (Order_ID, Product_ID, Quantity, Unit_Price, Discount_Rate) VALUES (?, ?, ?, ?, ?)";
